@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1717283202607,
+      "tag": "0000_conscious_mystique",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1717283720830,
+      "tag": "0001_brief_lilith",
+      "breakpoints": true
+    }
+  ]
+}
