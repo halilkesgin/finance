@@ -1,9 +1,9 @@
-import { Button } from "@/components/ui/button";
-
-export default function Home() {
-  return (
-    <div>
-      Dashboard page
-    </div>
-  )
+const HomePage = () => {
+	return (
+		<div>
+			Home
+		</div>
+	)
 }
+
+export default HomePage
