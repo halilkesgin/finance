@@ -1,6 +1,7 @@
+import { z } from "zod"
 import { Hono } from "hono"
 import { clerkMiddleware, getAuth } from "@hono/clerk-auth"
-import { eq } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { zValidator } from "@hono/zod-validator"
 import { createId } from "@paralleldrive/cuid2"
 
@@ -28,6 +29,44 @@ const app = new Hono()
             return ctx.json({ data })
         })
 
+    .get(
+        "/:id",
+        zValidator("param", z.object({
+            id: z.string().optional()
+        })),
+        clerkMiddleware(),
+        async (ctx) => {
+            const auth = getAuth(ctx)
+            const { id } = ctx.req.valid("param")
+
+            if (!id) {
+                return ctx.json({ error: "Missing id." }, 400)
+            }
+
+            if (!auth?.userId) {
+                return ctx.json({ error: "Unauthorized." }, 401)
+            }
+
+            const [data] = await db
+                .select({
+                    id: accounts.id,
+                    name: accounts.name
+                })
+                .from(accounts)
+                .where(
+                    and(
+                        eq(accounts.userId, auth.userId),
+                        eq(accounts.id, id)
+                    )
+                )
+            if (!data) {
+                return ctx.json({ error: "Not found." }, 404)
+            }
+
+            return ctx.json({ data })
+        }
+    )
+
     .post(
         "/", 
         clerkMiddleware(), 
@@ -50,5 +89,38 @@ const app = new Hono()
 
             return ctx.json({ data })
         })
+
+        .post(
+            "/bulk-delete",
+            clerkMiddleware(),
+            zValidator(
+                "json",
+                z.object({
+                    ids: z.array(z.string())
+                })
+            ),
+            async (ctx) => {
+                const auth = getAuth(ctx)
+                const values = ctx.req.valid("json")
+                
+                if (!auth?.userId) {
+                    return ctx.json({ error: "Unauthorized." }, 401)
+                }
+
+                const data = await db
+                    .delete(accounts)
+                    .where(
+                        and(
+                            eq(accounts.userId, auth.userId),
+                            inArray(accounts.id, values.ids)
+                        )
+                    )
+                    .returning({
+                        id: accounts.id
+                    })
+
+                return ctx.json({ data })
+            }
+        )
 
 export default app
