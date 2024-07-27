@@ -15,6 +15,13 @@
       "when": 1717283720830,
       "tag": "0001_brief_lilith",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1722065806274,
+      "tag": "0002_tiny_lady_deathstrike",
+      "breakpoints": true
     }
   ]
 }
