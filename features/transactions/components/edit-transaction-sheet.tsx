@@ -7,6 +7,11 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { insertTransactionSchema } from "@/db/schema"
 import { useConfirm } from "@/hooks/use-confirm"
 
+import { useGetCategories } from "@/features/categories/api/use-get-categories"
+import { useCreateCategory } from "@/features/categories/api/use-create-category"
+import { useGetAccounts } from "@/features/accounts/api/use-get-accounts"
+import { useCreateAccount } from "@/features/accounts/api/use-create-account"
+
 import { useOpenTransaction } from "../hooks/use-open-transaction"
 import { useGetTransaction } from "../api/use-get-transaction"
 import { useEditTransaction } from "../api/use-edit-transaction"
@@ -26,8 +31,40 @@ export const EditTransactionSheet = () => {
     const editMutation = useEditTransaction(id)
     const deleteMutation = useDeleteTransaction(id)
 
-    const isPending = editMutation.isPending || deleteMutation.isPending
-    const isLoading = transactionQuery.isLoading
+    const categoryQuery = useGetCategories();
+    const categoryMutation = useCreateCategory();
+    const onCreateCategory = (name: string) =>
+        categoryMutation.mutate({
+            name,
+        });
+
+    const categoryOptions = (categoryQuery.data ?? []).map((category) => ({
+        label: category.name,
+        value: category.id,
+    }));
+
+    const accountQuery = useGetAccounts();
+    const accountMutation = useCreateAccount();
+    const onCreateAccount = (name: string) =>
+        accountMutation.mutate({
+            name,
+        });
+
+    const accountOptions = (accountQuery.data ?? []).map((account) => ({
+        label: account.name,
+        value: account.id,
+    }));
+
+    const isPending = 
+        editMutation.isPending || 
+        deleteMutation.isPending || 
+        transactionQuery.isLoading || 
+        categoryMutation.isPending ||
+        accountMutation.isPending
+    const isLoading = 
+        transactionQuery.isLoading ||
+        categoryQuery.isLoading ||
+        accountQuery.isLoading
     
     const formSchema = insertTransactionSchema.omit({
         id: true
@@ -56,9 +93,19 @@ export const EditTransactionSheet = () => {
     }
 
     const defaultValues = transactionQuery.data? {
-        id: transactionQuery.data.id,
+        accountId: transactionQuery.data.accountId,
+        categoryId: transactionQuery.data.categoryId,
+        amount: transactionQuery.data.amount.toString(),
+        date: transactionQuery.data.date ? new Date(transactionQuery.data.date) : new Date(),
+        payee: transactionQuery.data.payee,
+        notes: transactionQuery.data.notes
     } : {
-        id: ""
+        accountId: "",
+        categoryId: "",
+        amount: "",
+        date: new Date(),
+        payee: "",
+        notes: ""
     }
 
     return (
@@ -79,9 +126,17 @@ export const EditTransactionSheet = () => {
                             <Loader2 className="size-4 text-muted-foreground animate-spin" />
                         </div>    
                     ) : (
-                        <div>
-
-                        </div>
+                        <TransactionForm
+                            id={id}
+                            onSubmit={onSubmit}
+                            onDelete={onDelete}
+                            defaultValues={defaultValues}
+                            disabled={isPending}
+                            categoryOptions={categoryOptions}
+                            accountOptions={accountOptions}
+                            onCreateCategory={onCreateCategory}
+                            onCreateAccount={onCreateAccount}
+                        />
                     )}
                 </SheetContent>
             </Sheet>
